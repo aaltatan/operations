@@ -13,11 +13,36 @@ from pydantic import (
     model_validator,
 )
 
-from operations.core.validators import validate_password
+from operations.core.schemas import BaseQueryParams
+
+from .validators import validate_password
 
 StringFourChar = Annotated[str, Field(min_length=4, max_length=255)]
 Password = Annotated[SecretStr, Field(min_length=8, max_length=255)]
 Username = Annotated[str, Field(min_length=4, max_length=255, pattern=r"^[a-zA-Z0-9_]+$")]
+
+
+class UserQueryParams(BaseQueryParams):
+    order_by: list[
+        Literal[
+            "uid ASC",
+            "uid DESC",
+            "username ASC",
+            "username DESC",
+            "email ASC",
+            "email DESC",
+            "firstname ASC",
+            "firstname DESC",
+            "lastname ASC",
+            "lastname DESC",
+            "role ASC",
+            "role DESC",
+            "created_at ASC",
+            "created_at DESC",
+            "updated_at ASC",
+            "updated_at DESC",
+        ]
+    ] = ["created_at DESC"]  # noqa: RUF012
 
 
 class UserBaseSchema(BaseModel):

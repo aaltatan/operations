@@ -1,6 +1,11 @@
-from typing import Any, Literal
+from decimal import Decimal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field, computed_field
+
+FourCharString = Annotated[str, Field(min_length=4, max_length=255)]
+PositiveDecimal = Annotated[Decimal, Field(ge=0)]
+Percentage = Annotated[Decimal, Field(ge=0, le=1)]
 
 
 class BaseQueryParams(BaseModel):

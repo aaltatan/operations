@@ -1,9 +1,13 @@
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, model_validator
 from syriantaxes import RoundingMethod
 
-from ._types import FourCharString, Percentage, PositiveDecimal
+from operations.core.schemas import BaseQueryParams, FourCharString, Percentage, PositiveDecimal
+
+
+class TaxQueryParams(BaseQueryParams):
+    order_by: list[Literal["id ASC", "id DESC", "name", "name ASC"]] = ["id ASC"]  # noqa: RUF012
 
 
 class BaseBracketSchema(BaseModel):
@@ -36,8 +40,15 @@ class BaseBracketSchema(BaseModel):
         return self
 
 
+class BracketReadSchema(BaseBracketSchema):
+    pass
+
+
 class BaseTaxSchema(BaseModel):
     name: FourCharString
+    min_allowed_salary: PositiveDecimal
+    fixed_tax_rate: Percentage
+    compensation_rate: Percentage
     rounding_to_nearest: PositiveDecimal
     rounding_method: RoundingMethod = RoundingMethod.CEILING
 
@@ -47,11 +58,20 @@ class BaseTaxSchema(BaseModel):
                 "name": {
                     "examples": ["نظام الضرائب الجديد"],
                 },
+                "min_allowed_salary": {
+                    "examples": [837_000],
+                },
+                "fixed_tax_rate": {
+                    "examples": [0.05],
+                },
+                "compensation_rate": {
+                    "examples": [0.75],
+                },
                 "rounding_to_nearest": {
                     "examples": [100],
                 },
                 "rounding_method": {
-                    "examples": ["CEILING"],
+                    "examples": [RoundingMethod.CEILING],
                 },
                 "brackets": {
                     "examples": [
@@ -86,7 +106,7 @@ class BaseTaxSchema(BaseModel):
 
 class TaxReadSchema(BaseTaxSchema):
     id: int
-    brackets: list[BaseBracketSchema] = []
+    brackets: list[BracketReadSchema] = []
 
 
 class TaxCreateSchema(BaseTaxSchema):
@@ -95,4 +115,9 @@ class TaxCreateSchema(BaseTaxSchema):
 
 class TaxUpdateSchema(BaseModel):
     name: FourCharString | None = None
+    min_allowed_salary: PositiveDecimal | None = None
+    fixed_tax_rate: Percentage | None = None
+    compensation_rate: Percentage | None = None
+    rounding_method: RoundingMethod | None = None
+    rounding_to_nearest: PositiveDecimal | None = None
     brackets: list[BaseBracketSchema] | None = None

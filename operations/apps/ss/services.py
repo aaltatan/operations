@@ -3,8 +3,8 @@ from collections.abc import Iterable
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
-from operations.models.ss import SocialSecurity
-from operations.schemas.ss import SSCreateSchema, SSUpdateSchema
+from .models import SocialSecurity
+from .schemas import SSCreateSchema, SSUpdateSchema
 
 
 class SSNotFoundError(Exception):
@@ -88,7 +88,7 @@ class SocialSecurityService:
         self._db.delete(tax)
         self._db.commit()
 
-    def delete_bulk(self, ss_ids: list[int]) -> None:
+    def delete_bulk(self, ss_ids: set[int]) -> None:
         query = self._db.query(SocialSecurity).filter(SocialSecurity.id.in_(ss_ids))
 
         if len(ss_ids) != query.count():

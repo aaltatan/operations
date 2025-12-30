@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from operations.api import auth, v1
+from operations.api import v1
 from operations.core.config import get_config
 from operations.core.db import init_db
 from operations.core.middlewares import SqltapProfilerMiddleware
@@ -39,7 +39,6 @@ if config.debug:
 
 # routers
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(v1.router, prefix="/api/v1")
 
 

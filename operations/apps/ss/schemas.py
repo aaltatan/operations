@@ -1,7 +1,24 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 from syriantaxes import RoundingMethod
 
-from ._types import FourCharString, PositiveDecimal
+from operations.core.schemas import BaseQueryParams, FourCharString, PositiveDecimal
+
+
+class SSQueryParams(BaseQueryParams):
+    order_by: list[
+        Literal[
+            "id ASC",
+            "id DESC",
+            "name",
+            "name ASC",
+            "deduction_rate",
+            "deduction_rate ASC",
+            "min_allowed_salary",
+            "min_allowed_salary ASC",
+        ]
+    ] = ["id ASC"]  # noqa: RUF012
 
 
 class SSBaseSchema(BaseModel):
@@ -27,7 +44,7 @@ class SSBaseSchema(BaseModel):
                     "examples": [1],
                 },
                 "rounding_method": {
-                    "examples": ["CEILING"],
+                    "examples": ["ROUND_CEILING"],
                 },
             }
         }

@@ -1,16 +1,21 @@
 # ruff: noqa: B008 ARG001
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from operations.core.auth import get_admin_user, get_staff_user
+from operations.apps.auth.dependencies import get_admin_user, get_staff_user
+from operations.apps.tax.schemas import (
+    TaxCreateSchema,
+    TaxQueryParams,
+    TaxReadSchema,
+    TaxUpdateSchema,
+)
+from operations.apps.tax.services import TaxAlreadyExistsError, TaxNotFoundError, TaxService
 from operations.core.db import get_db
-from operations.schemas.common import BaseQueryParams, WrapperSchema
-from operations.schemas.tax import TaxCreateSchema, TaxReadSchema
-from operations.services.tax import TaxAlreadyExistsError, TaxNotFoundError, TaxService
+from operations.core.schemas import WrapperSchema
 
 
 def get_tax_service(session: Session = Depends(get_db)) -> TaxService:
@@ -24,20 +29,9 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-class QueryParams(BaseQueryParams):
-    order_by: list[
-        Literal[
-            "id ASC",
-            "id DESC",
-            "name",
-            "name ASC",
-        ]
-    ] = ["id ASC"]  # noqa: RUF012
-
-
 @router.get("/", response_model=WrapperSchema[list[TaxReadSchema]])
-@limiter.limit("5/minute")
-def get_all(request: Request, service: Service, params: Annotated[QueryParams, Query()]):
+@limiter.limit("1/second")
+def get_all(request: Request, service: Service, params: Annotated[TaxQueryParams, Query()]):
     data = service.get_all(params.q, params.offset, params.limit, params.order_by)
     return WrapperSchema(data=data)
 
@@ -56,6 +50,7 @@ def get_by_id(request: Request, service: Service, tax_id: int):
     "/",
     response_model=WrapperSchema[TaxReadSchema],
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_staff_user)],
 )
 @limiter.limit("5/minute")
 def create(request: Request, service: Service, schema: Annotated[TaxCreateSchema, Body()]):
@@ -66,9 +61,29 @@ def create(request: Request, service: Service, schema: Annotated[TaxCreateSchema
         raise HTTPException(status_code=400, detail=str(e)) from None
 
 
+@router.put(
+    "/{tax_id}",
+    response_model=WrapperSchema[TaxReadSchema],
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(get_staff_user)],
+)
+@limiter.limit("5/minute")
+def update(
+    request: Request, service: Service, tax_id: int, schema: Annotated[TaxUpdateSchema, Body()]
+):
+    try:
+        data = service.update(tax_id, schema)
+        return WrapperSchema(data=data)
+    except TaxNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+    except TaxAlreadyExistsError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
+
 @router.delete(
     "/{tax_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
 )
 @limiter.limit("5/minute")
 def delete(request: Request, service: Service, tax_id: int):
@@ -76,3 +91,26 @@ def delete(request: Request, service: Service, tax_id: int):
         service.delete(tax_id)
     except TaxNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
+
+
+@router.delete(
+    "/bulk",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
+@limiter.limit("5/minute")
+def delete_bulk(request: Request, service: Service, tax_ids: Annotated[set[int], Body()]):
+    try:
+        service.delete_bulk(tax_ids)
+    except TaxNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from None
+
+
+@router.delete(
+    "/empty",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
+@limiter.limit("5/minute")
+def empty(request: Request, service: Service):
+    service.empty()

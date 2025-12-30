@@ -1,12 +1,11 @@
 from collections.abc import Iterable
-from typing import Literal
 
+from bcrypt import checkpw, gensalt, hashpw
 from sqlalchemy.orm import Query, Session
 from sqlalchemy.sql import not_, text
 
-from operations.core.utils import hash_password, verify_password
-from operations.models.user import Role, User
-from operations.schemas.user import UserCreateSchema, UserUpdateSchema
+from .models import Role, User
+from .schemas import UserCreateSchema, UserUpdateSchema
 
 
 class UserNotFoundError(Exception):
@@ -25,25 +24,30 @@ class PasswordIncorrectError(Exception):
     pass
 
 
-def get_user_by_username(username: str, db: Session) -> User | None:
-    return db.query(User).filter(User.username == username).first()
-
-
-def authenticate_user(username: str, password: str, db: Session) -> Literal[False] | User:
-    user = get_user_by_username(username, db)
-
-    if user is None:
-        return False
-
-    if not verify_password(password, user.hash_password):
-        return False
-
-    return user
-
-
 class UserService:
     def __init__(self, session: Session) -> None:
         self._db = session
+
+    def _hash_password(self, password: str) -> str:
+        return hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
+
+    def _verify_password(self, password: str, hashed_password: str) -> bool:
+        return checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
+
+    def _set_new_password(self, user: User, new_password: str) -> User:
+        user.hash_password = self._hash_password(new_password)
+        self._db.commit()
+        self._db.refresh(user)
+        return user
+
+    def _get_existence_usernames_query(self, usernames: list[str]) -> Query[User]:
+        query = self._db.query(User).filter(User.username.in_(usernames))
+
+        if len(usernames) != query.count():
+            message = f"Some User with username {usernames} not found"
+            raise UserNotFoundError(message)
+
+        return query
 
     def get_all(self, query: str, offset: int, limit: int, order_by: Iterable[str]) -> list[User]:
         return (
@@ -101,7 +105,7 @@ class UserService:
             firstname=schema.firstname,
             lastname=schema.lastname,
             role=schema.role,
-            hash_password=hash_password(password),
+            hash_password=self._hash_password(password),
         )
 
         self._db.add(user)
@@ -136,12 +140,6 @@ class UserService:
 
         return user
 
-    def _set_new_password(self, user: User, new_password: str) -> User:
-        user.hash_password = hash_password(new_password)
-        self._db.commit()
-        self._db.refresh(user)
-        return user
-
     def reset_password(self, username: str, new_password: str) -> User:
         user = self.get_by_username(username)
         return self._set_new_password(user, new_password)
@@ -149,7 +147,7 @@ class UserService:
     def change_password(self, username: str, old_password: str, new_password: str) -> User:
         user = self.get_by_username(username)
 
-        if not verify_password(old_password, user.hash_password):
+        if not self._verify_password(old_password, user.hash_password):
             message = "Invalid password"
             raise PasswordIncorrectError(message)
 
@@ -180,15 +178,6 @@ class UserService:
         self._db.refresh(user)
 
         return user
-
-    def _get_existence_usernames_query(self, usernames: list[str]) -> Query[User]:
-        query = self._db.query(User).filter(User.username.in_(usernames))
-
-        if len(usernames) != query.count():
-            message = f"Some User with username {usernames} not found"
-            raise UserNotFoundError(message)
-
-        return query
 
     def activate_bulk(self, usernames: list[str]) -> list[User]:
         query = self._get_existence_usernames_query(usernames)

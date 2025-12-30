@@ -1,34 +1,19 @@
 # ruff: noqa: B008 ARG001
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from operations.core.auth import get_admin_user, get_staff_user
+from operations.apps.auth.dependencies import get_admin_user, get_staff_user
+from operations.apps.ss.schemas import SSCreateSchema, SSQueryParams, SSReadSchema, SSUpdateSchema
+from operations.apps.ss.services import SocialSecurityService, SSAlreadyExistsError, SSNotFoundError
 from operations.core.db import get_db
-from operations.schemas.common import BaseQueryParams, WrapperSchema
-from operations.schemas.ss import SSCreateSchema, SSReadSchema, SSUpdateSchema
-from operations.services.ss import SocialSecurityService, SSAlreadyExistsError, SSNotFoundError
+from operations.core.schemas import WrapperSchema
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
-
-
-class QueryParams(BaseQueryParams):
-    order_by: list[
-        Literal[
-            "id ASC",
-            "id DESC",
-            "name",
-            "name ASC",
-            "deduction_rate",
-            "deduction_rate ASC",
-            "min_allowed_salary",
-            "min_allowed_salary ASC",
-        ]
-    ] = ["id ASC"]  # noqa: RUF012
 
 
 def get_taxes_service(session: Session = Depends(get_db)) -> SocialSecurityService:
@@ -40,7 +25,7 @@ Service = Annotated[SocialSecurityService, Depends(get_taxes_service)]
 
 @router.get("/", response_model=WrapperSchema[list[SSReadSchema]])
 @limiter.limit("1/second")
-def get_all(request: Request, service: Service, params: Annotated[QueryParams, Query()]):
+def get_all(request: Request, service: Service, params: Annotated[SSQueryParams, Query()]):
     data = service.get_all(params.q, params.offset, params.limit, params.order_by)
     return WrapperSchema(data=data)
 
@@ -108,7 +93,7 @@ def delete(request: Request, service: Service, tax_id: int):
     dependencies=[Depends(get_admin_user)],
 )
 @limiter.limit("5/minute")
-def delete_bulk(request: Request, service: Service, ss_ids: Annotated[list[int], Body()]):
+def delete_bulk(request: Request, service: Service, ss_ids: Annotated[set[int], Body()]):
     try:
         service.delete_bulk(ss_ids)
     except SSNotFoundError as e:

@@ -1,5 +1,5 @@
 # ruff: noqa: B008 ARG001
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from pydantic import SecretStr
@@ -7,23 +7,24 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from operations.core.auth import get_admin_user
-from operations.core.db import get_db
-from operations.models.user import Role
-from operations.schemas.common import BaseQueryParams, WrapperSchema
-from operations.schemas.user import (
+from operations.apps.auth.dependencies import get_admin_user
+from operations.apps.users.models import Role
+from operations.apps.users.schemas import (
     UserChangePasswordSchema,
     UserCreateSchema,
+    UserQueryParams,
     UserReadSchema,
     UserUpdateSchema,
 )
-from operations.services.users import (
+from operations.apps.users.services import (
     EmailAlreadyExistsError,
     PasswordIncorrectError,
     UsernameAlreadyExistsError,
     UserNotFoundError,
     UserService,
 )
+from operations.core.db import get_db
+from operations.core.schemas import WrapperSchema
 
 
 def get_user_service(session: Session = Depends(get_db)) -> UserService:
@@ -37,36 +38,13 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-class QueryParams(BaseQueryParams):
-    order_by: list[
-        Literal[
-            "uid ASC",
-            "uid DESC",
-            "username ASC",
-            "username DESC",
-            "email ASC",
-            "email DESC",
-            "firstname ASC",
-            "firstname DESC",
-            "lastname ASC",
-            "lastname DESC",
-            "role ASC",
-            "role DESC",
-            "created_at ASC",
-            "created_at DESC",
-            "updated_at ASC",
-            "updated_at DESC",
-        ]
-    ] = ["created_at DESC"]  # noqa: RUF012
-
-
 @router.get(
     "/",
     response_model=WrapperSchema[list[UserReadSchema]],
     dependencies=[Depends(get_admin_user)],
 )
 @limiter.limit("5/minute")
-def get_all(request: Request, service: Service, params: Annotated[QueryParams, Query()]):
+def get_all(request: Request, service: Service, params: Annotated[UserQueryParams, Query()]):
     data = service.get_all(params.q, params.offset, params.limit, params.order_by)
     return WrapperSchema(data=data)
 
