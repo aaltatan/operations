@@ -88,11 +88,11 @@ def get_by_username(request: Request, service: Service, username: str):
 def create(
     request: Request,
     service: Service,
-    schema: Annotated[UserCreateSchema, Body()],
+    create_schema: Annotated[UserCreateSchema, Body()],
     password_schema: Annotated[UserPasswordSchema, Body()],
 ):
     try:
-        data = service.create(schema, password=password_schema.password.get_secret_value())
+        data = service.create(create_schema, password=password_schema.password.get_secret_value())
         return WrapperSchema(data=data)
     except UsernameAlreadyExistsError as e:
         raise HTTPException(status_code=400, detail=str(e)) from None
