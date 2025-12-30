@@ -7,7 +7,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from operations.apps.auth.dependencies import get_admin_user
+from operations.apps.auth.dependencies import get_admin_user, get_user
 from operations.apps.users.models import Role
 from operations.apps.users.schemas import (
     UserChangePasswordSchema,
@@ -43,6 +43,13 @@ limiter = Limiter(key_func=get_remote_address)
     "/",
     response_model=WrapperSchema[list[UserReadSchema]],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Get all users.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def get_all(request: Request, service: Service, params: Annotated[UserQueryParams, Query()]):
@@ -54,6 +61,13 @@ def get_all(request: Request, service: Service, params: Annotated[UserQueryParam
     "/{uid}",
     response_model=WrapperSchema[UserReadSchema],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Get a user by uid.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def get_by_uid(request: Request, service: Service, uid: str):
@@ -68,6 +82,13 @@ def get_by_uid(request: Request, service: Service, uid: str):
     "/{username}",
     response_model=WrapperSchema[UserReadSchema],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Get a user by username.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def get_by_username(request: Request, service: Service, username: str):
@@ -83,6 +104,13 @@ def get_by_username(request: Request, service: Service, username: str):
     response_model=WrapperSchema[UserReadSchema],
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Create a new user.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def create(
@@ -105,6 +133,13 @@ def create(
     response_model=WrapperSchema[UserReadSchema],
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Update a user.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def update(
@@ -125,7 +160,14 @@ def update(
     "/{username}/change-password",
     response_model=WrapperSchema[UserReadSchema],
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[Depends(get_admin_user)],
+    dependencies=[Depends(get_user)],
+    description=(
+        """
+        Change a user's password.\n
+        - User required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def change_password(
@@ -149,6 +191,13 @@ def change_password(
     "/{username}/reset-password",
     response_model=WrapperSchema[UserReadSchema],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Reset a user's password.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def reset_password(
@@ -166,6 +215,13 @@ def reset_password(
     response_model=WrapperSchema[UserReadSchema],
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Change a user's role.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def change_role(request: Request, service: Service, username: str, role: Annotated[Role, Body()]):
@@ -180,6 +236,13 @@ def change_role(request: Request, service: Service, username: str, role: Annotat
     "/{username}/deactivate",
     response_model=WrapperSchema[UserReadSchema],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Deactivate a user.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def deactivate(request: Request, service: Service, username: str):
@@ -194,6 +257,13 @@ def deactivate(request: Request, service: Service, username: str):
     "/bulk/deactivate",
     response_model=WrapperSchema[list[UserReadSchema]],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Deactivate multiple users.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def deactivate_bulk(request: Request, service: Service, usernames: Annotated[list[str], Body()]):
@@ -208,6 +278,13 @@ def deactivate_bulk(request: Request, service: Service, usernames: Annotated[lis
     "/bulk/activate",
     response_model=WrapperSchema[list[UserReadSchema]],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Activate multiple users.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def activate_bulk(request: Request, service: Service, usernames: Annotated[list[str], Body()]):
@@ -222,6 +299,13 @@ def activate_bulk(request: Request, service: Service, usernames: Annotated[list[
     "/{username}/activate",
     response_model=WrapperSchema[UserReadSchema],
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Activate a user.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def activate(request: Request, service: Service, username: str):
@@ -236,6 +320,13 @@ def activate(request: Request, service: Service, username: str):
     "/{username}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Delete a user.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def delete(request: Request, service: Service, username: str):
@@ -249,6 +340,13 @@ def delete(request: Request, service: Service, username: str):
     "/bulk",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Delete multiple users.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def delete_bulk(request: Request, service: Service, usernames: Annotated[list[str], Body()]):
@@ -262,6 +360,13 @@ def delete_bulk(request: Request, service: Service, usernames: Annotated[list[st
     "/empty",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Delete all users.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def empty(request: Request, service: Service):

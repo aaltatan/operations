@@ -25,7 +25,7 @@ Service = Annotated[AuthenticationService, Depends(get_user_service)]
 router = APIRouter()
 
 
-@router.post("/token", response_model=TokenSchema)
+@router.post("/token", response_model=TokenSchema, description="Login with username and password")
 def login(
     service: Service,
     config: Annotated[Config, Depends(get_config)],

@@ -29,14 +29,32 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.get("/", response_model=WrapperSchema[list[TaxReadSchema]])
+@router.get(
+    "/",
+    response_model=WrapperSchema[list[TaxReadSchema]],
+    description=(
+        """
+        Get all tax records.\n
+        - Limited to 1 request per second.
+        """
+    ),
+)
 @limiter.limit("1/second")
 def get_all(request: Request, service: Service, params: Annotated[TaxQueryParams, Query()]):
     data = service.get_all(params.q, params.offset, params.limit, params.order_by)
     return WrapperSchema(data=data)
 
 
-@router.get("/{tax_id}", response_model=WrapperSchema[TaxReadSchema])
+@router.get(
+    "/{tax_id}",
+    response_model=WrapperSchema[TaxReadSchema],
+    description=(
+        """
+        Get a tax record by id.\n
+        - Limited to 1 request per second.
+        """
+    ),
+)
 @limiter.limit("1/second")
 def get_by_id(request: Request, service: Service, tax_id: int):
     try:
@@ -51,6 +69,13 @@ def get_by_id(request: Request, service: Service, tax_id: int):
     response_model=WrapperSchema[TaxReadSchema],
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(get_staff_user)],
+    description=(
+        """
+        Create a new tax record.\n
+        - Staff user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def create(request: Request, service: Service, schema: Annotated[TaxCreateSchema, Body()]):
@@ -66,6 +91,13 @@ def create(request: Request, service: Service, schema: Annotated[TaxCreateSchema
     response_model=WrapperSchema[TaxReadSchema],
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(get_staff_user)],
+    description=(
+        """
+        Update a tax record.\n
+        - Staff user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def update(
@@ -84,6 +116,13 @@ def update(
     "/{tax_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Delete a tax record.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def delete(request: Request, service: Service, tax_id: int):
@@ -97,6 +136,13 @@ def delete(request: Request, service: Service, tax_id: int):
     "/bulk",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Delete multiple tax records.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def delete_bulk(request: Request, service: Service, tax_ids: Annotated[set[int], Body()]):
@@ -110,6 +156,13 @@ def delete_bulk(request: Request, service: Service, tax_ids: Annotated[set[int],
     "/empty",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(get_admin_user)],
+    description=(
+        """
+        Delete all tax records.\n
+        - Admin user required.\n
+        - Limited to 5 requests per minute.
+        """
+    ),
 )
 @limiter.limit("5/minute")
 def empty(request: Request, service: Service):
