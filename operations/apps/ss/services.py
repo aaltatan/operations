@@ -32,60 +32,54 @@ class SocialSecurityService:
         )
 
     def get_by_id(self, ss_id: int) -> SocialSecurity:
-        tax = self._db.query(SocialSecurity).filter(SocialSecurity.id == ss_id).first()
+        ss = self._db.query(SocialSecurity).filter(SocialSecurity.id == ss_id).first()
 
-        if tax is None:
+        if ss is None:
             message = f"Social Security with id '{ss_id}' not found"
             raise SSNotFoundError(message)
 
-        return tax
+        return ss
 
     def create(self, schema: SSCreateSchema) -> SocialSecurity:
-        existing_tax = (
+        existing_ss = (
             self._db.query(SocialSecurity).filter(SocialSecurity.name == schema.name).first()
         )
 
-        if existing_tax is not None:
+        if existing_ss is not None:
             message = f"Social Security with name '{schema.name}' already exists"
             raise SSAlreadyExistsError(message)
 
-        tax = SocialSecurity(
-            name=schema.name,
-            deduction_rate=schema.deduction_rate,
-            min_allowed_salary=schema.min_allowed_salary,
-            rounding_method=schema.rounding_method,
-            rounding_to_nearest=schema.rounding_to_nearest,
-        )
+        ss = SocialSecurity(**schema.model_dump())
 
-        self._db.add(tax)
+        self._db.add(ss)
         self._db.commit()
 
-        return tax
+        return ss
 
     def update(self, ss_id: int, schema: SSUpdateSchema) -> SocialSecurity:
-        tax = self.get_by_id(ss_id)
+        ss = self.get_by_id(ss_id)
+
+        if schema.name is not None:
+            existing_ss = (
+                self._db.query(SocialSecurity).filter(SocialSecurity.name == schema.name).first()
+            )
+
+            if existing_ss is not None and existing_ss.id != ss_id:
+                message = f"Social Security with name '{schema.name}' already exists"
+                raise SSAlreadyExistsError(message)
 
         for key, value in schema.model_dump().items():
-            if key == "name" and value is not None:
-                existing_tax = (
-                    self._db.query(SocialSecurity).filter(SocialSecurity.name == value).first()
-                )
-
-                if existing_tax is not None and existing_tax.id != ss_id:
-                    message = f"Social Security with name '{value}' already exists"
-                    raise SSAlreadyExistsError(message)
-
             if value is not None:
-                setattr(tax, key, value)
+                setattr(ss, key, value)
 
         self._db.commit()
-        self._db.refresh(tax)
+        self._db.refresh(ss)
 
-        return tax
+        return ss
 
     def delete(self, ss_id: int) -> None:
-        tax = self.get_by_id(ss_id)
-        self._db.delete(tax)
+        ss = self.get_by_id(ss_id)
+        self._db.delete(ss)
         self._db.commit()
 
     def delete_bulk(self, ss_ids: set[int]) -> None:

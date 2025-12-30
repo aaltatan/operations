@@ -99,14 +99,7 @@ class UserService:
             message = f"User with email '{schema.email}' already exists"
             raise EmailAlreadyExistsError(message)
 
-        user = User(
-            username=schema.username,
-            email=schema.email,
-            firstname=schema.firstname,
-            lastname=schema.lastname,
-            role=schema.role,
-            hash_password=self._hash_password(password),
-        )
+        user = User(**schema.model_dump(), hash_password=self._hash_password(password))
 
         self._db.add(user)
         self._db.commit()
@@ -130,10 +123,9 @@ class UserService:
                 message = f"User with email '{schema.email}' already exists"
                 raise EmailAlreadyExistsError(message)
 
-        user.username = schema.username or user.username
-        user.email = schema.email or user.email
-        user.firstname = schema.firstname or user.firstname
-        user.lastname = schema.lastname or user.lastname
+        for key, value in schema.model_dump().items():
+            if value is not None:
+                setattr(user, key, value)
 
         self._db.commit()
         self._db.refresh(user)

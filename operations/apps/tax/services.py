@@ -45,11 +45,10 @@ class TaxService:
             message = f"Tax with name '{schema.name}' already exists"
             raise TaxAlreadyExistsError(message)
 
-        tax = Tax(
-            name=schema.name,
-            rounding_method=schema.rounding_method,
-            rounding_to_nearest=schema.rounding_to_nearest,
-        )
+        tax_dict = schema.model_dump()
+        tax_dict.pop("brackets")
+
+        tax = Tax(**tax_dict)
 
         self._db.add(tax)
         self._db.flush()
