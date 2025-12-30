@@ -3,17 +3,22 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from operations.core.auth import CurrentActiveUser, create_access_token
 from operations.core.config import Config, get_config
 from operations.core.db import get_db
-from operations.schemas.auth import TokenSchema
 from operations.schemas.user import UserReadSchema
 from operations.schemas.wrapper import WrapperSchema
-from operations.services.auth import CurrentActiveUser, create_access_token
 from operations.services.users import authenticate_user
 
 router = APIRouter()
+
+
+class TokenSchema(BaseModel):
+    access_token: str = Field(..., description="The access token")
+    token_type: str = Field("bearer", description="The type of the token")
 
 
 @router.post("/token", response_model=TokenSchema)

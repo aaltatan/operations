@@ -7,6 +7,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
+from operations.core.auth import get_admin_user
 from operations.core.db import get_db
 from operations.models.user import Role
 from operations.schemas.query import BaseQueryParams
@@ -60,14 +61,22 @@ class QueryParams(BaseQueryParams):
     ] = ["created_at DESC"]  # noqa: RUF012
 
 
-@router.get("/", response_model=WrapperSchema[list[UserReadSchema]])
+@router.get(
+    "/",
+    response_model=WrapperSchema[list[UserReadSchema]],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def get_all(request: Request, service: Service, params: Annotated[QueryParams, Query()]):
     data = service.get_all(params.q, params.offset, params.limit, params.order_by)
     return WrapperSchema(data=data)
 
 
-@router.get("/{uid}", response_model=WrapperSchema[UserReadSchema])
+@router.get(
+    "/{uid}",
+    response_model=WrapperSchema[UserReadSchema],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def get_by_uid(request: Request, service: Service, uid: str):
     try:
@@ -77,7 +86,11 @@ def get_by_uid(request: Request, service: Service, uid: str):
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.get("/{username}", response_model=WrapperSchema[UserReadSchema])
+@router.get(
+    "/{username}",
+    response_model=WrapperSchema[UserReadSchema],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def get_by_username(request: Request, service: Service, username: str):
     try:
@@ -87,7 +100,12 @@ def get_by_username(request: Request, service: Service, username: str):
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.post("/", response_model=WrapperSchema[UserReadSchema], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=WrapperSchema[UserReadSchema],
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def create(request: Request, service: Service, schema: Annotated[UserCreateSchema, Body()]):
     try:
@@ -103,6 +121,7 @@ def create(request: Request, service: Service, schema: Annotated[UserCreateSchem
     "/{username}",
     response_model=WrapperSchema[UserReadSchema],
     status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(get_admin_user)],
 )
 @limiter.limit("5/minute")
 def update(
@@ -123,6 +142,7 @@ def update(
     "/{username}/change-password",
     response_model=WrapperSchema[UserReadSchema],
     status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(get_admin_user)],
 )
 @limiter.limit("5/minute")
 def change_password(
@@ -142,7 +162,11 @@ def change_password(
         raise HTTPException(status_code=400, detail=str(e)) from None
 
 
-@router.put("/{username}/reset-password", response_model=WrapperSchema[UserReadSchema])
+@router.put(
+    "/{username}/reset-password",
+    response_model=WrapperSchema[UserReadSchema],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def reset_password(
     request: Request, service: Service, username: str, new_password: Annotated[SecretStr, Body()]
@@ -158,6 +182,7 @@ def reset_password(
     "/{username}/change-role",
     response_model=WrapperSchema[UserReadSchema],
     status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(get_admin_user)],
 )
 @limiter.limit("5/minute")
 def change_role(request: Request, service: Service, username: str, role: Annotated[Role, Body()]):
@@ -168,7 +193,11 @@ def change_role(request: Request, service: Service, username: str, role: Annotat
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.put("/{username}/deactivate", response_model=WrapperSchema[UserReadSchema])
+@router.put(
+    "/{username}/deactivate",
+    response_model=WrapperSchema[UserReadSchema],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def deactivate(request: Request, service: Service, username: str):
     try:
@@ -178,7 +207,11 @@ def deactivate(request: Request, service: Service, username: str):
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.put("/bulk/deactivate", response_model=WrapperSchema[list[UserReadSchema]])
+@router.put(
+    "/bulk/deactivate",
+    response_model=WrapperSchema[list[UserReadSchema]],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def deactivate_bulk(request: Request, service: Service, usernames: Annotated[list[str], Body()]):
     try:
@@ -188,7 +221,11 @@ def deactivate_bulk(request: Request, service: Service, usernames: Annotated[lis
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.put("/bulk/activate", response_model=WrapperSchema[list[UserReadSchema]])
+@router.put(
+    "/bulk/activate",
+    response_model=WrapperSchema[list[UserReadSchema]],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def activate_bulk(request: Request, service: Service, usernames: Annotated[list[str], Body()]):
     try:
@@ -198,7 +235,11 @@ def activate_bulk(request: Request, service: Service, usernames: Annotated[list[
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.put("/{username}/activate", response_model=WrapperSchema[UserReadSchema])
+@router.put(
+    "/{username}/activate",
+    response_model=WrapperSchema[UserReadSchema],
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def activate(request: Request, service: Service, username: str):
     try:
@@ -208,7 +249,11 @@ def activate(request: Request, service: Service, username: str):
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.delete("/{username}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{username}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def delete(request: Request, service: Service, username: str):
     try:
@@ -217,7 +262,11 @@ def delete(request: Request, service: Service, username: str):
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.delete("/bulk", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/bulk",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def delete_bulk(request: Request, service: Service, usernames: Annotated[list[str], Body()]):
     try:
@@ -226,7 +275,11 @@ def delete_bulk(request: Request, service: Service, usernames: Annotated[list[st
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.delete("/empty", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/empty",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def empty(request: Request, service: Service):
     service.empty()

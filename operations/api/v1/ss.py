@@ -6,6 +6,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
+from operations.core.auth import get_admin_user, get_staff_user
 from operations.core.db import get_db
 from operations.schemas.query import BaseQueryParams
 from operations.schemas.ss import SSCreateSchema, SSReadSchema, SSUpdateSchema
@@ -39,13 +40,18 @@ Service = Annotated[SocialSecurityService, Depends(get_taxes_service)]
 
 
 @router.get("/", response_model=WrapperSchema[list[SSReadSchema]])
-@limiter.limit("5/minute")
+@limiter.limit("1/second")
 def get_all(request: Request, service: Service, params: Annotated[QueryParams, Query()]):
     data = service.get_all(params.q, params.offset, params.limit, params.order_by)
     return WrapperSchema(data=data)
 
 
-@router.post("/", response_model=WrapperSchema[SSReadSchema], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=WrapperSchema[SSReadSchema],
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_staff_user)],
+)
 @limiter.limit("5/minute")
 def create(request: Request, service: Service, schema: Annotated[SSCreateSchema, Body()]):
     try:
@@ -56,7 +62,7 @@ def create(request: Request, service: Service, schema: Annotated[SSCreateSchema,
 
 
 @router.get("/{tax_id}", response_model=WrapperSchema[SSReadSchema])
-@limiter.limit("5/minute")
+@limiter.limit("1/second")
 def get_by_id(request: Request, service: Service, tax_id: int):
     try:
         data = service.get_by_id(tax_id)
@@ -66,7 +72,10 @@ def get_by_id(request: Request, service: Service, tax_id: int):
 
 
 @router.put(
-    "/{tax_id}", response_model=WrapperSchema[SSReadSchema], status_code=status.HTTP_202_ACCEPTED
+    "/{tax_id}",
+    response_model=WrapperSchema[SSReadSchema],
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(get_staff_user)],
 )
 @limiter.limit("5/minute")
 def update(
@@ -81,7 +90,11 @@ def update(
         raise HTTPException(status_code=400, detail=str(e)) from None
 
 
-@router.delete("/{tax_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{tax_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def delete(request: Request, service: Service, tax_id: int):
     try:
@@ -90,7 +103,11 @@ def delete(request: Request, service: Service, tax_id: int):
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.delete("/bulk", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/bulk",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def delete_bulk(request: Request, service: Service, ss_ids: Annotated[list[int], Body()]):
     try:
@@ -99,7 +116,11 @@ def delete_bulk(request: Request, service: Service, ss_ids: Annotated[list[int],
         raise HTTPException(status_code=404, detail=str(e)) from None
 
 
-@router.delete("/empty", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/empty",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_admin_user)],
+)
 @limiter.limit("5/minute")
 def empty(request: Request, service: Service):
     service.empty()
