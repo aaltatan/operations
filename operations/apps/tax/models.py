@@ -24,7 +24,7 @@ class Tax(Base):
         DECIMAL(precision=10, scale=2), nullable=False
     )
 
-    brackets: Mapped[list["Bracket"]] = relationship("Bracket", back_populates="tax")
+    brackets: Mapped[list["Bracket"]] = relationship("Bracket", back_populates="tax", lazy="joined")
 
     def __repr__(self) -> str:
         return (
