@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from operations.core.auth import CurrentActiveUser, create_access_token
 from operations.core.config import Config, get_config
 from operations.core.db import get_db
+from operations.schemas.common import WrapperSchema
 from operations.schemas.user import UserReadSchema
-from operations.schemas.wrapper import WrapperSchema
 from operations.services.users import authenticate_user
 
 router = APIRouter()

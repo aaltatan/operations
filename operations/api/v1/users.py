@@ -10,14 +10,13 @@ from sqlalchemy.orm import Session
 from operations.core.auth import get_admin_user
 from operations.core.db import get_db
 from operations.models.user import Role
-from operations.schemas.query import BaseQueryParams
+from operations.schemas.common import BaseQueryParams, WrapperSchema
 from operations.schemas.user import (
     UserChangePasswordSchema,
     UserCreateSchema,
     UserReadSchema,
     UserUpdateSchema,
 )
-from operations.schemas.wrapper import WrapperSchema
 from operations.services.users import (
     EmailAlreadyExistsError,
     PasswordIncorrectError,

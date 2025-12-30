@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from sqlalchemy import DECIMAL, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from syriantaxes import RoundingMethod
 
 from operations.core.db import Base
 
@@ -11,11 +12,22 @@ class Tax(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    rounding_method: Mapped[RoundingMethod] = mapped_column(String(20), nullable=False)
+    rounding_to_nearest: Mapped[Decimal] = mapped_column(
+        DECIMAL(precision=10, scale=2), nullable=False
+    )
 
     brackets: Mapped["Bracket"] = relationship("Bracket", back_populates="tax")
 
     def __repr__(self) -> str:
-        return f"<Tax(id={self.id}, name={self.name})>"
+        return (
+            "<Tax("
+            f"id={self.id},"
+            f" name={self.name},"
+            f" rounding_method={self.rounding_method},"
+            f" rounding_to_nearest={self.rounding_to_nearest}"
+            ")>"
+        )
 
 
 class Bracket(Base):

@@ -3,6 +3,12 @@ from typing import Any, Literal
 from pydantic import BaseModel, computed_field
 
 
+class BaseQueryParams(BaseModel):
+    q: str = ""
+    offset: int = 0
+    limit: int = 10
+
+
 class WrapperSchema[T](BaseModel):
     data: T
 

@@ -8,9 +8,8 @@ from sqlalchemy.orm import Session
 
 from operations.core.auth import get_admin_user, get_staff_user
 from operations.core.db import get_db
-from operations.schemas.query import BaseQueryParams
+from operations.schemas.common import BaseQueryParams, WrapperSchema
 from operations.schemas.ss import SSCreateSchema, SSReadSchema, SSUpdateSchema
-from operations.schemas.wrapper import WrapperSchema
 from operations.services.ss import SocialSecurityService, SSAlreadyExistsError, SSNotFoundError
 
 router = APIRouter()

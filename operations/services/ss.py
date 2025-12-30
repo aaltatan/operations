@@ -53,6 +53,8 @@ class SocialSecurityService:
             name=schema.name,
             deduction_rate=schema.deduction_rate,
             min_allowed_salary=schema.min_allowed_salary,
+            rounding_method=schema.rounding_method,
+            rounding_to_nearest=schema.rounding_to_nearest,
         )
 
         self._db.add(tax)
