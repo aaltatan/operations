@@ -33,7 +33,7 @@ class TaxService:
         tax = self._db.query(Tax).filter(Tax.id == tax_id).first()
 
         if tax is None:
-            message = f"Tax with id {tax_id} not found"
+            message = f"Tax with id '{tax_id}' not found"
             raise TaxNotFoundError(message)
 
         return tax
@@ -42,7 +42,7 @@ class TaxService:
         existing_tax = self._db.query(Tax).filter(Tax.name == schema.name).first()
 
         if existing_tax is not None:
-            message = f"Tax with name {schema.name} already exists"
+            message = f"Tax with name '{schema.name}' already exists"
             raise TaxAlreadyExistsError(message)
 
         tax = Tax(
@@ -103,7 +103,7 @@ class TaxService:
         query = self._db.query(Tax).filter(Tax.id.in_(tax_ids))
 
         if len(tax_ids) != query.count():
-            message = f"Some Tax with id {tax_ids} not found"
+            message = f"Some Tax with id '{tax_ids}' not found"
             raise TaxNotFoundError(message)
 
         self._db.query(Bracket).filter(Bracket.tax_id.in_(tax_ids)).delete()

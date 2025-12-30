@@ -12,6 +12,7 @@ from operations.apps.users.models import Role
 from operations.apps.users.schemas import (
     UserChangePasswordSchema,
     UserCreateSchema,
+    UserPasswordSchema,
     UserQueryParams,
     UserReadSchema,
     UserUpdateSchema,
@@ -84,9 +85,14 @@ def get_by_username(request: Request, service: Service, username: str):
     dependencies=[Depends(get_admin_user)],
 )
 @limiter.limit("5/minute")
-def create(request: Request, service: Service, schema: Annotated[UserCreateSchema, Body()]):
+def create(
+    request: Request,
+    service: Service,
+    schema: Annotated[UserCreateSchema, Body()],
+    password_schema: Annotated[UserPasswordSchema, Body()],
+):
     try:
-        data = service.create(schema, password=schema.password.get_secret_value())
+        data = service.create(schema, password=password_schema.password.get_secret_value())
         return WrapperSchema(data=data)
     except UsernameAlreadyExistsError as e:
         raise HTTPException(status_code=400, detail=str(e)) from None

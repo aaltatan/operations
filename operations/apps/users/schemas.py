@@ -15,6 +15,7 @@ from pydantic import (
 
 from operations.core.schemas import BaseQueryParams
 
+from .models import Role
 from .validators import validate_password
 
 StringFourChar = Annotated[str, Field(min_length=4, max_length=255)]
@@ -50,7 +51,7 @@ class UserBaseSchema(BaseModel):
     username: Username
     firstname: StringFourChar
     lastname: StringFourChar
-    role: Literal["admin", "user", "staff"]
+    role: Role
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -89,7 +90,7 @@ class UserReadSchema(UserBaseSchema):
         return f"{self.firstname} {self.lastname}"
 
 
-class UserCreateSchema(UserBaseSchema):
+class UserPasswordSchema(BaseModel):
     password: Password
 
     @field_validator("password", mode="after")
@@ -97,6 +98,10 @@ class UserCreateSchema(UserBaseSchema):
     def validate_password(cls, secret_value: SecretStr) -> SecretStr:
         validate_password(secret_value.get_secret_value())
         return secret_value
+
+
+class UserCreateSchema(UserBaseSchema):
+    pass
 
 
 class UserUpdateSchema(BaseModel):

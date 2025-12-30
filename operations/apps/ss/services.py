@@ -35,7 +35,7 @@ class SocialSecurityService:
         tax = self._db.query(SocialSecurity).filter(SocialSecurity.id == ss_id).first()
 
         if tax is None:
-            message = f"Social Security with id {ss_id} not found"
+            message = f"Social Security with id '{ss_id}' not found"
             raise SSNotFoundError(message)
 
         return tax
@@ -46,7 +46,7 @@ class SocialSecurityService:
         )
 
         if existing_tax is not None:
-            message = f"Social Security with name {schema.name} already exists"
+            message = f"Social Security with name '{schema.name}' already exists"
             raise SSAlreadyExistsError(message)
 
         tax = SocialSecurity(
@@ -72,7 +72,7 @@ class SocialSecurityService:
                 )
 
                 if existing_tax is not None and existing_tax.id != ss_id:
-                    message = f"Social Security with name {value} already exists"
+                    message = f"Social Security with name '{value}' already exists"
                     raise SSAlreadyExistsError(message)
 
             if value is not None:
@@ -92,7 +92,7 @@ class SocialSecurityService:
         query = self._db.query(SocialSecurity).filter(SocialSecurity.id.in_(ss_ids))
 
         if len(ss_ids) != query.count():
-            message = f"Some Social Security with id {ss_ids} not found"
+            message = f"Some Social Security with id '{ss_ids}' not found"
             raise SSNotFoundError(message)
 
         query.delete()

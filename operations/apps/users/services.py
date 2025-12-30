@@ -44,7 +44,7 @@ class UserService:
         query = self._db.query(User).filter(User.username.in_(usernames))
 
         if len(usernames) != query.count():
-            message = f"Some User with username {usernames} not found"
+            message = f"Some User with username '{usernames}' not found"
             raise UserNotFoundError(message)
 
         return query
@@ -63,7 +63,7 @@ class UserService:
         user = self._db.query(User).filter(User.uid == uid).first()
 
         if user is None:
-            message = f"User with uid {uid} not found"
+            message = f"User with uid '{uid}' not found"
             raise UserNotFoundError(message)
 
         return user
@@ -72,7 +72,7 @@ class UserService:
         user = self._db.query(User).filter(User.username == username).first()
 
         if user is None:
-            message = f"User with username {username} not found"
+            message = f"User with username '{username}' not found"
             raise UserNotFoundError(message)
 
         return user
@@ -81,7 +81,7 @@ class UserService:
         user = self._db.query(User).filter(User.email == email).first()
 
         if user is None:
-            message = f"User with email {email} not found"
+            message = f"User with email '{email}' not found"
             raise UserNotFoundError(message)
 
         return user
@@ -90,13 +90,13 @@ class UserService:
         existing_user = self._db.query(User).filter(User.username == schema.username).first()
 
         if existing_user is not None:
-            message = f"User with username {schema.username} already exists"
+            message = f"User with username '{schema.username}' already exists"
             raise UsernameAlreadyExistsError(message)
 
         existing_user = self._db.query(User).filter(User.email == schema.email).first()
 
         if existing_user is not None:
-            message = f"User with email {schema.email} already exists"
+            message = f"User with email '{schema.email}' already exists"
             raise EmailAlreadyExistsError(message)
 
         user = User(
@@ -120,14 +120,14 @@ class UserService:
             existing_user = self._db.query(User).filter(User.username == schema.username).first()
 
             if existing_user is not None and existing_user.uid != user.uid:
-                message = f"User with username {schema.username} already exists"
+                message = f"User with username '{schema.username}' already exists"
                 raise UsernameAlreadyExistsError(message)
 
         if schema.email is not None:
             existing_user = self._db.query(User).filter(User.email == schema.email).first()
 
             if existing_user is not None and existing_user.uid != user.uid:
-                message = f"User with email {schema.email} already exists"
+                message = f"User with email '{schema.email}' already exists"
                 raise EmailAlreadyExistsError(message)
 
         user.username = schema.username or user.username

@@ -12,9 +12,11 @@ dependencies = [
     "slowapi>=0.1.9",
     "sqlalchemy>=2.0.45",
     "syriantaxes>=0.1.0",
+    "typer-di>=0.1.3",
 ]
 
 [dependency-groups]
 dev = [
+    "devtools>=0.12.2",
     "sqltap>=0.3.11",
 ]
