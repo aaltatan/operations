@@ -1,0 +1,20 @@
+[project]
+name = "operations"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi[all]>=0.128.0",
+    "pyjwt>=2.10.1",
+    "python-multipart>=0.0.21",
+    "slowapi>=0.1.9",
+    "sqlalchemy>=2.0.45",
+    "syriantaxes>=0.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "sqltap>=0.3.11",
+]
