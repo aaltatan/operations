@@ -1,9 +1,10 @@
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field, computed_field
 
 
-class Gross(BaseModel):
+class GrossOutSchema(BaseModel):
     salary: Decimal
     compensation: Decimal
 
@@ -19,7 +20,7 @@ class Gross(BaseModel):
         return (self.compensation / self.get_total()).quantize(Decimal("0.01"))
 
 
-class Tax(BaseModel):
+class TaxOutSchema(BaseModel):
     brackets: Decimal
     fixed: Decimal
 
@@ -31,9 +32,9 @@ class Tax(BaseModel):
         return self.get_total()
 
 
-class Deduction(BaseModel):
-    taxes: Tax
-    social_security: Decimal
+class DeductionOutSchema(BaseModel):
+    taxes: TaxOutSchema
+    social_security: Decimal = Field(Decimal(0))
 
     def get_total(self) -> Decimal:
         return self.taxes.get_total() + self.social_security
@@ -43,10 +44,19 @@ class Deduction(BaseModel):
         return self.get_total()
 
 
-class SalarySchema(BaseModel):
-    gross: Gross
-    deduction: Deduction
+class SalaryOutSchema(BaseModel):
+    gross: GrossOutSchema
+    deduction: DeductionOutSchema
 
     @computed_field
     def net(self) -> Decimal:
         return self.gross.get_total() - self.deduction.get_total()
+
+
+class GrossInSchema(BaseModel):
+    salary: Annotated[Decimal, Field(gt=0, examples=[1_000_000])]
+    compensation: Decimal = Field(Decimal(0), examples=[500_000])
+
+    ss_salary: Decimal | None = None
+    tax_id: int | None = None
+    ss_id: int | None = None

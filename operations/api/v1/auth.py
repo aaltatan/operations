@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from operations.apps.auth.dependencies import get_current_user
 from operations.apps.auth.schemas import TokenSchema
 from operations.apps.auth.services import AuthenticationService, InvalidCredentialsError
-from operations.apps.users.models import User
+from operations.apps.users.models import UserDB
 from operations.apps.users.schemas import UserReadSchema
 from operations.core.config import Config, get_config
 from operations.core.db import get_db
@@ -51,5 +51,5 @@ def login(
 
 
 @router.post("/me", response_model=WrapperSchema[UserReadSchema])
-def me(current_user: Annotated[User, Depends(get_current_user)]):
+def me(current_user: Annotated[UserDB, Depends(get_current_user)]):
     return WrapperSchema(data=current_user)

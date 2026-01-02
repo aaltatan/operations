@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DECIMAL, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -6,8 +7,11 @@ from syriantaxes import RoundingMethod
 
 from operations.core.db import Base
 
+if TYPE_CHECKING:
+    from operations.apps.config.models import TaxesCalculatorConfigDB
 
-class Tax(Base):
+
+class TaxDB(Base):
     __tablename__ = "taxes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -24,11 +28,14 @@ class Tax(Base):
         DECIMAL(precision=10, scale=2), nullable=False
     )
 
-    brackets: Mapped[list["Bracket"]] = relationship("Bracket", back_populates="tax", lazy="joined")
+    brackets: Mapped[list["BracketDB"]] = relationship(back_populates="tax", lazy="joined")
+    tax_calculator_config: Mapped["TaxesCalculatorConfigDB"] = relationship(
+        back_populates="default_tax"
+    )
 
     def __repr__(self) -> str:
         return (
-            "<Tax("
+            "<TaxDB("
             f"id={self.id},"
             f" name={self.name},"
             f" min_allowed_salary={self.min_allowed_salary},"
@@ -40,7 +47,7 @@ class Tax(Base):
         )
 
 
-class Bracket(Base):
+class BracketDB(Base):
     __tablename__ = "brackets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -50,7 +57,7 @@ class Bracket(Base):
     rate: Mapped[Decimal] = mapped_column(DECIMAL(precision=10, scale=2), nullable=False)
 
     tax_id: Mapped[int] = mapped_column(ForeignKey("taxes.id"), nullable=False)
-    tax: Mapped["Tax"] = relationship("Tax", back_populates="brackets")
+    tax: Mapped["TaxDB"] = relationship(back_populates="brackets")
 
     def __repr__(self) -> str:
-        return f"<Bracket(id={self.id}, min={self.min}, max={self.max}, rate={self.rate})>"
+        return f"<BracketDB(id={self.id}, min={self.min}, max={self.max}, rate={self.rate})>"

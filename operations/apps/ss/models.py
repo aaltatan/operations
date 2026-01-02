@@ -1,13 +1,17 @@
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DECIMAL, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from syriantaxes import RoundingMethod
 
 from operations.core.db import Base
 
+if TYPE_CHECKING:
+    from operations.apps.config.models import TaxesCalculatorConfigDB
 
-class SocialSecurity(Base):
+
+class SocialSecurityDB(Base):
     __tablename__ = "social_security"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -21,9 +25,13 @@ class SocialSecurity(Base):
         DECIMAL(precision=10, scale=2), nullable=False
     )
 
+    tax_calculator_config: Mapped["TaxesCalculatorConfigDB"] = relationship(
+        back_populates="default_ss"
+    )
+
     def __repr__(self) -> str:
         return (
-            "<SocialSecurity("
+            "<SocialSecurityDB("
             f"id={self.id},"
             f" name={self.name},"
             f" deduction_rate={self.deduction_rate},"

@@ -10,7 +10,7 @@ from operations.core.db import Base
 type Role = Literal["admin", "user", "staff"]
 
 
-class User(Base):
+class UserDB(Base):
     __tablename__ = "users"
 
     uid: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)

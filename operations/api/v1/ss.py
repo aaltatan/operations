@@ -16,11 +16,11 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-def get_taxes_service(session: Session = Depends(get_db)) -> SocialSecurityService:
+def get_ss_service(session: Session = Depends(get_db)) -> SocialSecurityService:
     return SocialSecurityService(session)
 
 
-Service = Annotated[SocialSecurityService, Depends(get_taxes_service)]
+Service = Annotated[SocialSecurityService, Depends(get_ss_service)]
 
 
 @router.get(
